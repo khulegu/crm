@@ -1,4 +1,10 @@
-import { integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+} from "drizzle-orm/pg-core";
 
 export * from "./auth-schema";
 import { user } from "./auth-schema";
@@ -95,4 +101,19 @@ export const commentMention = pgTable("comment_mention", {
   userId: text("user_id")
     .references(() => user.id)
     .notNull(),
+});
+
+export const notification = pgTable("notification", {
+  id: text("id").primaryKey(),
+  userId: text("user_id")
+    .references(() => user.id)
+    .notNull(),
+  body: text("body").notNull(),
+  isRead: boolean("is_read").notNull().default(false),
+  type: text("type").notNull(),
+  ticketId: text("ticket_id")
+    .references(() => ticket.id)
+    .notNull(),
+  commentId: text("comment_id").references(() => comment.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });

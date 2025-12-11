@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { tag, ticket, ticketTag, user } from "@/lib/schema";
+import { notification, tag, ticket, ticketTag, user } from "@/lib/schema";
 import { TRPCError } from "@trpc/server";
 import { desc, eq, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
@@ -143,6 +143,16 @@ export const ticketRouter = createTRPCRouter({
         );
       }
 
+      if (input.assignedTo) {
+        await db.insert(notification).values({
+          id: crypto.randomUUID(),
+          userId: input.assignedTo,
+          body: `You have been assigned to ticket ${newTicket.title}`,
+          type: "ticket_assigned",
+          ticketId: newTicket.id,
+        });
+      }
+
       return newTicket;
     }),
 
@@ -164,6 +174,12 @@ export const ticketRouter = createTRPCRouter({
       if (!ctx.user?.id) {
         throw new TRPCError({ code: "UNAUTHORIZED" });
       }
+
+      const [oldAssignedTo] = await db
+        .select({ id: ticket.assignedTo })
+        .from(ticket)
+        .where(eq(ticket.id, input.id))
+        .limit(1);
 
       const [updatedTicket] = await db
         .update(ticket)
@@ -187,6 +203,18 @@ export const ticketRouter = createTRPCRouter({
             tagId: tag,
           }))
         );
+      }
+
+      if (oldAssignedTo.id !== input.assignedTo) {
+        if (input.assignedTo) {
+          await db.insert(notification).values({
+            id: crypto.randomUUID(),
+            userId: input.assignedTo,
+            body: `You have been assigned to ticket ${input.title}`,
+            type: "ticket_assigned",
+            ticketId: input.id,
+          });
+        }
       }
 
       return updatedTicket;

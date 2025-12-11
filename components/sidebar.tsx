@@ -80,7 +80,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/dashboard/users">
+                <Link href="/dashboard/notifications">
                   <Bell className="size-4" />
                   Notifications
                 </Link>
