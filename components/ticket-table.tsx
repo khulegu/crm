@@ -37,6 +37,7 @@ import * as React from "react";
 import { Checkbox } from "./ui/checkbox";
 import { PriorityBadge, StatusBadge } from "./custom-selects";
 import { Spinner } from "./ui/spinner";
+import { Badge } from "./ui/badge";
 
 type Ticket = {
   id: string;
@@ -57,6 +58,10 @@ type Ticket = {
   updatedAt: Date;
   startDate: Date | null;
   dueDate: Date | null;
+  tags: {
+    id: string;
+    name: string;
+  }[];
 };
 
 export const columns: ColumnDef<Ticket>[] = [
@@ -104,6 +109,24 @@ export const columns: ColumnDef<Ticket>[] = [
       const priority = row.getValue("priority") as keyof typeof PRIORITY_LABEL;
       return <PriorityBadge priority={priority} />;
     },
+  },
+  {
+    accessorKey: "tags",
+    header: "Tags",
+    cell: ({ row }) => {
+      const tags = row.getValue("tags") as Ticket["tags"];
+      return (
+        <div className="flex flex-wrap gap-1">
+          {tags.map((tag) => (
+            <Badge key={tag.id} variant="default">
+              {tag.name}
+            </Badge>
+          ))}
+        </div>
+      );
+    },
+    enableSorting: false,
+    enableHiding: false,
   },
   {
     accessorKey: "createdBy",

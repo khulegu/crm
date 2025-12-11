@@ -44,7 +44,31 @@ export const ticketRouter = createTRPCRouter({
   list: baseProcedure.query(async () => {
     const { query } = ticketWithUser();
     const tickets = await query.orderBy(desc(ticket.createdAt));
-    return tickets;
+
+    const ticketTags = await db
+      .select({
+        ticketId: ticketTag.ticketId,
+        id: tag.id,
+        name: tag.name,
+      })
+      .from(ticketTag)
+      .innerJoin(tag, eq(ticketTag.tagId, tag.id))
+      .where(
+        inArray(
+          ticketTag.ticketId,
+          tickets.map((ticket) => ticket.id)
+        )
+      );
+
+    return tickets.map((ticket) => ({
+      ...ticket,
+      tags: ticketTags
+        .filter((tag) => ticket.id === tag.ticketId)
+        .map((tag) => ({
+          id: tag.id,
+          name: tag.name,
+        })),
+    }));
   }),
 
   get: baseProcedure

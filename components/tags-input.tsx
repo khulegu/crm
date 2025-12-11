@@ -47,10 +47,10 @@ export const CustomTagsInput = ({
         onSuccess: (newTag) => {
           utils.tag.invalidate();
           onValueChange([...value, newTag.id]);
+          setNewTag("");
         },
       }
     );
-    setNewTag("");
   };
 
   return (
