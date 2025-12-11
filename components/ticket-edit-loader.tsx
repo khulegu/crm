@@ -5,9 +5,7 @@ import TicketComments from "./ticket-comments";
 export default function TicketFormLoader({ id }: { id?: string }) {
   const { data: ticket, isLoading } = trpc.ticket.get.useQuery(
     { id: id! },
-    {
-      enabled: !!id,
-    }
+    { enabled: !!id }
   );
 
   if (isLoading) {
@@ -30,7 +28,7 @@ export default function TicketFormLoader({ id }: { id?: string }) {
                   description: ticket.description,
                   status: ticket.status.toString(),
                   priority: ticket.priority?.toString() || null,
-                  assignedTo: ticket.assignedTo,
+                  assignedTo: ticket.assignedTo?.id || null,
                   createdAt: ticket.createdAt,
                   updatedAt: ticket.updatedAt,
                 }
@@ -51,6 +49,14 @@ export default function TicketFormLoader({ id }: { id?: string }) {
           <TicketComments ticketId={id} />
         </div>
       )}
+
+      <div className="col-span-2">
+        <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+          <div>Created by: {ticket?.createdBy?.name}</div>
+          <div>Created at: {ticket?.createdAt.toLocaleString()}</div>
+          <div>Updated at: {ticket?.updatedAt.toLocaleString()}</div>
+        </div>
+      </div>
     </div>
   );
 }

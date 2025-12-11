@@ -46,9 +46,40 @@ export const ticketRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      return db.query.ticket.findFirst({
-        where: eq(ticket.id, input.id),
-      });
+      const assignedTo = alias(user, "assignedTo");
+      const createdBy = alias(user, "createdBy");
+
+      const tickets = await db
+        .select({
+          id: ticket.id,
+          title: ticket.title,
+          description: ticket.description,
+          status: ticket.status,
+          priority: ticket.priority ?? null,
+          createdAt: ticket.createdAt,
+          updatedAt: ticket.updatedAt,
+          createdBy: {
+            id: createdBy.id,
+            name: createdBy.name,
+            image: createdBy.image,
+          },
+          assignedTo: {
+            id: assignedTo.id,
+            name: assignedTo.name,
+            image: assignedTo.image,
+          },
+        })
+        .from(ticket)
+        .innerJoin(createdBy, eq(ticket.createdBy, createdBy.id))
+        .leftJoin(assignedTo, eq(ticket.assignedTo, assignedTo.id))
+        .where(eq(ticket.id, input.id))
+        .limit(1);
+
+      if (!tickets.length) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      return tickets[0];
     }),
 
   create: baseProcedure

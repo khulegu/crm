@@ -28,7 +28,7 @@ export function StatusBadge(
   }
 ) {
   return (
-    <Badge {...props} className="bg-background text-foreground">
+    <Badge {...props} className="bg-background text-foreground border-border">
       {props.status === 2 ? (
         <IconCircleCheckFilled className="fill-green-500" />
       ) : props.status === 1 ? (
