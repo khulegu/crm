@@ -1,5 +1,6 @@
 import { trpc } from "@/trpc/client";
 import TicketForm from "./ticket-form";
+import TicketComments from "./ticket-comments";
 
 export default function TicketFormLoader({ id }: { id?: string }) {
   const { data: ticket, isLoading } = trpc.ticket.get.useQuery(
@@ -18,29 +19,38 @@ export default function TicketFormLoader({ id }: { id?: string }) {
   }
 
   return (
-    <TicketForm
-      id={id}
-      initial={
-        ticket
-          ? {
-              title: ticket.title,
-              description: ticket.description,
-              status: ticket.status.toString(),
-              priority: ticket.priority?.toString() || null,
-              assignedTo: ticket.assignedTo,
-              createdAt: ticket.createdAt,
-              updatedAt: ticket.updatedAt,
-            }
-          : {
-              title: "",
-              description: "",
-              status: "",
-              priority: null,
-              assignedTo: null,
-              createdAt: null,
-              updatedAt: null,
-            }
-      }
-    />
+    <div className="w-full grid grid-cols-2">
+      <div className="col-span-1">
+        <TicketForm
+          id={id}
+          initial={
+            ticket
+              ? {
+                  title: ticket.title,
+                  description: ticket.description,
+                  status: ticket.status.toString(),
+                  priority: ticket.priority?.toString() || null,
+                  assignedTo: ticket.assignedTo,
+                  createdAt: ticket.createdAt,
+                  updatedAt: ticket.updatedAt,
+                }
+              : {
+                  title: "",
+                  description: "",
+                  status: "",
+                  priority: null,
+                  assignedTo: null,
+                  createdAt: null,
+                  updatedAt: null,
+                }
+          }
+        />
+      </div>
+      {id && (
+        <div className="col-span-1">
+          <TicketComments ticketId={id} />
+        </div>
+      )}
+    </div>
   );
 }
