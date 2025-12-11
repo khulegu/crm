@@ -35,6 +35,7 @@ import { MoreHorizontal, PlusIcon } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 import { Checkbox } from "./ui/checkbox";
+import { PriorityBadge, StatusBadge } from "./custom-selects";
 
 type Ticket = {
   id: string;
@@ -77,7 +78,7 @@ export const columns: ColumnDef<Ticket>[] = [
     cell: ({ row }) => (
       <Link
         href={`/dashboard/ticket/${row.original.id}`}
-        className="hover:underline font-bold"
+        className="hover:underline font-medium"
       >
         {row.getValue("title")}
       </Link>
@@ -90,7 +91,7 @@ export const columns: ColumnDef<Ticket>[] = [
     header: "Status",
     cell: ({ row }) => {
       const status = row.getValue("status") as keyof typeof STATUS_LABEL;
-      return <div className="capitalize">{STATUS_LABEL[status]}</div>;
+      return <StatusBadge status={status} />;
     },
   },
   {
@@ -98,7 +99,7 @@ export const columns: ColumnDef<Ticket>[] = [
     header: "Priority",
     cell: ({ row }) => {
       const priority = row.getValue("priority") as keyof typeof PRIORITY_LABEL;
-      return <div className="capitalize">{PRIORITY_LABEL[priority]}</div>;
+      return <PriorityBadge priority={priority} />;
     },
   },
   {

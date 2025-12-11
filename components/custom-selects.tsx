@@ -1,15 +1,66 @@
-import { PRIORITY_LABEL, STATUS_LABEL, STATUS_VALUES } from "@/lib/schema";
-import { PRIORITY_VALUES } from "@/lib/schema";
+import {
+  PRIORITY_LABEL,
+  PRIORITY_VALUES,
+  STATUS_LABEL,
+  STATUS_VALUES,
+} from "@/lib/schema";
+import { trpc } from "@/trpc/client";
+import {
+  IconCircleCheckFilled,
+  IconClock,
+  IconClockFilled,
+  IconLoader,
+} from "@tabler/icons-react";
+import { Badge } from "./ui/badge";
 import {
   Select,
-  SelectLabel,
-  SelectGroup,
-  SelectValue,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
+  SelectValue,
 } from "./ui/select";
-import { trpc } from "@/trpc/client";
+
+export function StatusBadge(
+  props: React.ComponentProps<typeof Badge> & {
+    status: keyof typeof STATUS_LABEL;
+  }
+) {
+  return (
+    <Badge {...props} className="bg-background text-foreground">
+      {props.status === 2 ? (
+        <IconCircleCheckFilled className="fill-green-500" />
+      ) : props.status === 1 ? (
+        <IconClockFilled className="fill-yellow-500" />
+      ) : (
+        <IconLoader />
+      )}
+      {STATUS_LABEL[props.status]}
+    </Badge>
+  );
+}
+
+export function PriorityBadge(
+  props: React.ComponentProps<typeof Badge> & {
+    priority: keyof typeof PRIORITY_LABEL;
+  }
+) {
+  const COLOR_MAP = {
+    0: "bg-gray-500",
+    1: "bg-green-500",
+    2: "bg-yellow-500",
+    3: "bg-red-500",
+  };
+  return (
+    <Badge
+      {...props}
+      className={COLOR_MAP[props.priority as keyof typeof COLOR_MAP]}
+    >
+      {PRIORITY_LABEL[props.priority]}
+    </Badge>
+  );
+}
 
 export function PrioritySelect(props: React.ComponentProps<typeof Select>) {
   return (
@@ -19,7 +70,9 @@ export function PrioritySelect(props: React.ComponentProps<typeof Select>) {
           <SelectLabel>Priority</SelectLabel>
           {PRIORITY_VALUES.map((priority: number) => (
             <SelectItem key={priority} value={priority.toString()}>
-              {PRIORITY_LABEL[priority as keyof typeof PRIORITY_LABEL]}
+              <PriorityBadge
+                priority={priority as keyof typeof PRIORITY_LABEL}
+              />
             </SelectItem>
           ))}
         </SelectGroup>
@@ -39,7 +92,7 @@ export function StatusSelect(props: React.ComponentProps<typeof Select>) {
           <SelectLabel>Status</SelectLabel>
           {STATUS_VALUES.map((status) => (
             <SelectItem key={status} value={status.toString()}>
-              {STATUS_LABEL[status as keyof typeof STATUS_LABEL]}
+              <StatusBadge status={status as keyof typeof STATUS_LABEL} />
             </SelectItem>
           ))}
         </SelectGroup>

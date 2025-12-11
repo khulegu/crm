@@ -18,6 +18,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { PrioritySelect, StatusSelect, UserSelect } from "./custom-selects";
 import { Textarea } from "./ui/textarea";
+import { GhostInput } from "./ghost-input";
+import { toast } from "sonner";
 
 const ticketFormSchema = z.object({
   title: z.string().min(1),
@@ -61,21 +63,22 @@ export default function TicketForm({
         { id, ...body },
         {
           onSuccess: () => {
-            utils.ticket.list.invalidate();
+            utils.ticket.invalidate();
             router.push("/dashboard");
+            toast.success("Ticket updated");
           },
           onError: (error) => {
             console.error(error);
           },
         }
       );
-      utils.ticket.list.invalidate();
     } else {
       console.log("Creating ticket");
       createTicket.mutate(body, {
         onSuccess: () => {
-          utils.ticket.list.invalidate();
+          utils.ticket.invalidate();
           router.push("/dashboard");
+          toast.success("Ticket created");
         },
         onError: (error) => {
           console.error(error);
@@ -94,7 +97,11 @@ export default function TicketForm({
             render={({ field }) => (
               <FormItem>
                 <FormControl>
-                  <Input className="font-bold" placeholder="Title" {...field} />
+                  <GhostInput
+                    className="font-bold text-2xl"
+                    placeholder="Title"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
