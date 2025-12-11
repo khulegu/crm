@@ -1,7 +1,7 @@
 "use client";
 
-import TicketFormLoader from "@/components/ticket-edit-loader";
+import TicketView from "@/components/ticket-view";
 
 export default function TicketCreatePage() {
-  return <TicketFormLoader />;
+  return <TicketView />;
 }

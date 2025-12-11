@@ -75,3 +75,24 @@ export const ticketTag = pgTable("ticket_tag", {
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
 });
+
+export const comment = pgTable("comment", {
+  id: text("id").primaryKey(),
+  body: text("body").notNull(),
+  ticketId: text("ticket_id")
+    .references(() => ticket.id)
+    .notNull(),
+  createdBy: text("created_by")
+    .references(() => user.id)
+    .notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const commentMention = pgTable("comment_mention", {
+  commentId: text("comment_id")
+    .references(() => comment.id)
+    .notNull(),
+  userId: text("user_id")
+    .references(() => user.id)
+    .notNull(),
+});

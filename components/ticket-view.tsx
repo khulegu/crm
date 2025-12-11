@@ -8,8 +8,9 @@ import {
   BreadcrumbList,
 } from "./ui/breadcrumb";
 import { Spinner } from "./ui/spinner";
+import { ArrowLeftIcon } from "lucide-react";
 
-export default function TicketFormLoader({ id }: { id?: string }) {
+export default function TicketView({ id }: { id?: string }) {
   const { data: ticket, isLoading } = trpc.ticket.get.useQuery(
     { id: id! },
     { enabled: !!id }
@@ -29,12 +30,18 @@ export default function TicketFormLoader({ id }: { id?: string }) {
   }
 
   return (
-    <div className="w-full grid grid-cols-2">
+    <div className="w-full grid grid-cols-2 gap-4">
       <div className="col-span-2">
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard">Tasks</BreadcrumbLink>
+              <BreadcrumbLink
+                href="/dashboard"
+                className="flex items-center gap-2"
+              >
+                <ArrowLeftIcon className="w-4 h-4" />
+                Tasks
+              </BreadcrumbLink>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -70,7 +77,7 @@ export default function TicketFormLoader({ id }: { id?: string }) {
         />
       </div>
       {id && (
-        <div className="col-span-1">
+        <div className="col-span-1 h-full">
           <TicketComments ticketId={id} />
         </div>
       )}

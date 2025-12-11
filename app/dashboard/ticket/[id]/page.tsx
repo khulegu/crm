@@ -1,6 +1,6 @@
 "use client";
 
-import TicketFormLoader from "@/components/ticket-edit-loader";
+import TicketView from "@/components/ticket-view";
 import { use } from "react";
 
 export default function TicketPage({
@@ -9,5 +9,5 @@ export default function TicketPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  return <TicketFormLoader id={id} />;
+  return <TicketView id={id} />;
 }
