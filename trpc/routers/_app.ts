@@ -1,5 +1,5 @@
-import { baseProcedure, createTRPCRouter } from '../init';
-import { ticketRouter } from './ticket';
+import { baseProcedure, createTRPCRouter } from "../init";
+import { ticketRouter } from "./ticket";
 
 export const appRouter = createTRPCRouter({
   ticket: ticketRouter,

@@ -1,9 +1,7 @@
-"use client"
+"use client";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -19,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PRIORITY_LABEL, STATUS_LABEL, ticket } from "@/lib/schema";
+import { PRIORITY_LABEL, STATUS_LABEL } from "@/lib/schema";
 import { trpc } from "@/trpc/client";
 import {
   ColumnDef,
@@ -33,21 +31,43 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { ChevronDown, MoreHorizontal, PlusIcon } from "lucide-react";
+import { MoreHorizontal, PlusIcon } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
+import { Checkbox } from "./ui/checkbox";
 
-export const columns: ColumnDef<typeof ticket.$inferSelect>[] = [
+type Ticket = {
+  id: string;
+  title: string;
+  status: keyof typeof STATUS_LABEL;
+  priority: keyof typeof PRIORITY_LABEL | null;
+  createdAt: Date;
+  createdBy: {
+    id: string;
+    name: string;
+    image: string | null;
+  };
+  assignedTo: {
+    id: string;
+    name: string;
+    image: string | null;
+  } | null;
+  updatedAt: Date;
+};
+
+export const columns: ColumnDef<Ticket>[] = [
   {
     accessorKey: "id",
     header: "ID",
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
+    cell: ({ row }) => {
+      return (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      );
+    },
     enableSorting: false,
     enableHiding: false,
   },
@@ -55,7 +75,12 @@ export const columns: ColumnDef<typeof ticket.$inferSelect>[] = [
     accessorKey: "title",
     header: "Title",
     cell: ({ row }) => (
-      <div>{row.getValue("title")}</div>
+      <Link
+        href={`/dashboard/ticket/${row.original.id}`}
+        className="hover:underline font-bold"
+      >
+        {row.getValue("title")}
+      </Link>
     ),
     enableSorting: false,
     enableHiding: false,
@@ -65,7 +90,7 @@ export const columns: ColumnDef<typeof ticket.$inferSelect>[] = [
     header: "Status",
     cell: ({ row }) => {
       const status = row.getValue("status") as keyof typeof STATUS_LABEL;
-      return <div className="capitalize">{STATUS_LABEL[status]}</div>
+      return <div className="capitalize">{STATUS_LABEL[status]}</div>;
     },
   },
   {
@@ -73,15 +98,25 @@ export const columns: ColumnDef<typeof ticket.$inferSelect>[] = [
     header: "Priority",
     cell: ({ row }) => {
       const priority = row.getValue("priority") as keyof typeof PRIORITY_LABEL;
-      return <div className="capitalize">{PRIORITY_LABEL[priority]}</div>
+      return <div className="capitalize">{PRIORITY_LABEL[priority]}</div>;
     },
   },
   {
     accessorKey: "createdBy",
     header: "Created By",
     cell: ({ row }) => {
-      const createdBy = row.getValue("createdBy") as string;
-      return <div className="capitalize">{createdBy}</div>
+      const createdBy = row.getValue("createdBy") as Ticket["createdBy"];
+      return <div className="capitalize">{createdBy?.name ?? "Unknown"}</div>;
+    },
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+    accessorKey: "assignedTo",
+    header: "Assigned To",
+    cell: ({ row }) => {
+      const assignedTo = row.getValue("assignedTo") as Ticket["assignedTo"];
+      return <div className="capitalize">{assignedTo?.name}</div>;
     },
     enableSorting: false,
     enableHiding: false,
@@ -91,7 +126,7 @@ export const columns: ColumnDef<typeof ticket.$inferSelect>[] = [
     header: "Created At",
     cell: ({ row }) => {
       const createdAt = row.getValue("createdAt") as Date;
-      return <div className="capitalize">{createdAt.toLocaleDateString()}</div>
+      return <div className="capitalize">{createdAt.toLocaleDateString()}</div>;
     },
     enableSorting: true,
     enableHiding: false,
@@ -100,8 +135,6 @@ export const columns: ColumnDef<typeof ticket.$inferSelect>[] = [
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
-      const payment = row.original
-
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -113,33 +146,31 @@ export const columns: ColumnDef<typeof ticket.$inferSelect>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(payment.id)}
+              onClick={() => navigator.clipboard.writeText(row.original.id)}
             >
-              Copy payment ID
+              Copy ticket ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>View customer</DropdownMenuItem>
-            <DropdownMenuItem>View payment details</DropdownMenuItem>
+            <DropdownMenuItem>View ticket</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      )
+      );
     },
   },
-]
+];
 
 export function TicketTable() {
-  const [sorting, setSorting] = React.useState<SortingState>([])
+  const { data: tickets, isLoading } = trpc.ticket.list.useQuery();
+  const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
-  )
+  );
   const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = React.useState({})
-
-  const tickets = trpc.ticket.list.useQuery();
+    React.useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = React.useState({});
 
   const table = useReactTable({
-    data: tickets.data ?? [],
+    data: tickets ?? [],
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -155,45 +186,19 @@ export function TicketTable() {
       columnVisibility,
       rowSelection,
     },
-  })
+  });
 
   return (
     <div className="w-full">
       <div className="flex items-center py-4">
         <Input
-          placeholder="Filter emails..."
+          placeholder="Search..."
           value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn("title")?.setFilterValue(event.target.value)
           }
           className="max-w-sm"
         />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                )
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
 
         <Button asChild variant="outline">
           <Link href="/dashboard/ticket/create">
@@ -213,11 +218,11 @@ export function TicketTable() {
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                     </TableHead>
-                  )
+                  );
                 })}
               </TableRow>
             ))}
@@ -277,5 +282,5 @@ export function TicketTable() {
         </div>
       </div>
     </div>
-  )
+  );
 }

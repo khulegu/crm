@@ -1,0 +1,46 @@
+import { trpc } from "@/trpc/client";
+import TicketForm from "./ticket-form";
+
+export default function TicketFormLoader({ id }: { id?: string }) {
+  const { data: ticket, isLoading } = trpc.ticket.get.useQuery(
+    { id: id! },
+    {
+      enabled: !!id,
+    }
+  );
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!ticket && !!id) {
+    return <div>Ticket not found</div>;
+  }
+
+  return (
+    <TicketForm
+      id={id}
+      initial={
+        ticket
+          ? {
+              title: ticket.title,
+              description: ticket.description,
+              status: ticket.status.toString(),
+              priority: ticket.priority?.toString() || null,
+              assignedTo: ticket.assignedTo,
+              createdAt: ticket.createdAt,
+              updatedAt: ticket.updatedAt,
+            }
+          : {
+              title: "",
+              description: "",
+              status: "",
+              priority: null,
+              assignedTo: null,
+              createdAt: null,
+              updatedAt: null,
+            }
+      }
+    />
+  );
+}

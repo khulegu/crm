@@ -16,6 +16,9 @@ export const PRIORITY = {
   URGENT: 3,
 }
 
+export const STATUS_VALUES = Object.values(STATUS);
+export const PRIORITY_VALUES = Object.values(PRIORITY);
+
 export const PRIORITY_LABEL = {
   [PRIORITY.LOW]: "Low",
   [PRIORITY.MEDIUM]: "Medium",
