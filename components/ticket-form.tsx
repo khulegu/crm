@@ -19,6 +19,7 @@ import { z } from "zod";
 import { PrioritySelect, StatusSelect, UserSelect } from "./custom-selects";
 import { DatePicker } from "./date-picker";
 import { GhostInput } from "./ghost-input";
+import { CustomTagsInput } from "./tags-input";
 import { Textarea } from "./ui/textarea";
 
 const ticketFormSchema = z.object({
@@ -31,6 +32,7 @@ const ticketFormSchema = z.object({
   dueDate: z.date().nullable(),
   createdAt: z.date().nullable(),
   updatedAt: z.date().nullable(),
+  tags: z.array(z.string()).nullable(),
 });
 
 export default function TicketForm({
@@ -60,6 +62,7 @@ export default function TicketForm({
       assignedTo: data.assignedTo,
       startDate: data.startDate,
       dueDate: data.dueDate,
+      tags: data.tags,
     };
 
     if (id) {
@@ -154,6 +157,22 @@ export default function TicketForm({
                   <FormControl>
                     <UserSelect
                       value={field.value || ""}
+                      onValueChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="tags"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tags</FormLabel>
+                  <FormControl>
+                    <CustomTagsInput
+                      value={field.value || []}
                       onValueChange={field.onChange}
                     />
                   </FormControl>

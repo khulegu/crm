@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
-import { ticket, user } from "@/lib/schema";
+import { tag, ticket, ticketTag, user } from "@/lib/schema";
 import { TRPCError } from "@trpc/server";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import z from "zod";
 import { baseProcedure, createTRPCRouter } from "../init";
@@ -43,7 +43,8 @@ const ticketWithUser = () => {
 export const ticketRouter = createTRPCRouter({
   list: baseProcedure.query(async () => {
     const { query } = ticketWithUser();
-    return query.orderBy(desc(ticket.createdAt));
+    const tickets = await query.orderBy(desc(ticket.createdAt));
+    return tickets;
   }),
 
   get: baseProcedure
@@ -56,10 +57,24 @@ export const ticketRouter = createTRPCRouter({
       const { query } = ticketWithUser();
 
       const tickets = await query.where(eq(ticket.id, input.id)).limit(1);
+
       if (!tickets.length) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
-      return tickets[0];
+
+      const ticketTags = await db
+        .select({
+          id: tag.id,
+          name: tag.name,
+        })
+        .from(ticketTag)
+        .innerJoin(tag, eq(ticketTag.tagId, tag.id))
+        .where(eq(ticketTag.ticketId, input.id));
+
+      return {
+        ...tickets[0],
+        tags: ticketTags,
+      };
     }),
 
   create: baseProcedure
@@ -72,6 +87,7 @@ export const ticketRouter = createTRPCRouter({
         assignedTo: z.string().nullable(),
         startDate: z.date().nullable(),
         dueDate: z.date().nullable(),
+        tags: z.array(z.string()).nullable(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -94,6 +110,15 @@ export const ticketRouter = createTRPCRouter({
         })
         .returning();
 
+      if (input.tags) {
+        await db.insert(ticketTag).values(
+          input.tags.map((tag) => ({
+            ticketId: newTicket.id,
+            tagId: tag,
+          }))
+        );
+      }
+
       return newTicket;
     }),
 
@@ -108,6 +133,7 @@ export const ticketRouter = createTRPCRouter({
         assignedTo: z.string().nullable(),
         startDate: z.date().nullable(),
         dueDate: z.date().nullable(),
+        tags: z.array(z.string()).nullable(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -129,8 +155,14 @@ export const ticketRouter = createTRPCRouter({
         .where(eq(ticket.id, input.id))
         .returning();
 
-      if (!updatedTicket) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+      if (input.tags) {
+        await db.delete(ticketTag).where(eq(ticketTag.ticketId, input.id));
+        await db.insert(ticketTag).values(
+          input.tags.map((tag) => ({
+            ticketId: input.id,
+            tagId: tag,
+          }))
+        );
       }
 
       return updatedTicket;

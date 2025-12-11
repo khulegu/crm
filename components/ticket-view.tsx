@@ -61,17 +61,19 @@ export default function TicketView({ id }: { id?: string }) {
                   dueDate: ticket.dueDate || null,
                   createdAt: ticket.createdAt,
                   updatedAt: ticket.updatedAt,
+                  tags: ticket.tags?.map((tag) => tag.id) || null,
                 }
               : {
                   title: "",
                   description: "",
-                  status: "",
+                  status: "0",
                   priority: null,
                   assignedTo: null,
                   startDate: null,
                   dueDate: null,
                   createdAt: null,
                   updatedAt: null,
+                  tags: null,
                 }
           }
         />

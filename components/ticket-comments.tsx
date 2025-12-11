@@ -43,16 +43,16 @@ function CommentItem({
   };
 }) {
   return (
-    <div className="flex flex-col gap-2 bg-muted p-4 rounded-md">
+    <div className="flex flex-col gap-2 bg-muted/50 p-2 rounded-md">
       <div className="flex items-center gap-2">
-        <Avatar>
+        <Avatar className="size-6">
           <AvatarImage src={comment.createdBy.image ?? undefined} />
           <AvatarFallback>{comment.createdBy.name.charAt(0)}</AvatarFallback>
         </Avatar>
-        <p className="text-sm font-medium">{comment.createdBy.name}</p>
+        <p className="text-xs font-semibold">{comment.createdBy.name}</p>
       </div>
-      <p>{comment.body}</p>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm">{comment.body}</p>
+      <p className="text-xs text-muted-foreground">
         {comment.createdAt.toLocaleString()}
       </p>
     </div>
@@ -80,7 +80,7 @@ function CommentForm({ ticketId }: { ticketId: string }) {
   return (
     <div className="flex flex-col gap-2">
       <Textarea
-        placeholder="Add a comment"
+        placeholder="Leave a comment..."
         value={body}
         onChange={(e) => setBody(e.target.value)}
       />
