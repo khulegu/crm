@@ -6,12 +6,11 @@ import { alias } from "drizzle-orm/pg-core";
 import z from "zod";
 import { baseProcedure, createTRPCRouter } from "../init";
 
-export const ticketRouter = createTRPCRouter({
-  list: baseProcedure.query(async () => {
-    const assignedTo = alias(user, "assignedTo");
-    const createdBy = alias(user, "createdBy");
-
-    const tickets = await db
+const ticketWithUser = () => {
+  const assignedTo = alias(user, "assignedTo");
+  const createdBy = alias(user, "createdBy");
+  return {
+    query: db
       .select({
         id: ticket.id,
         title: ticket.title,
@@ -20,6 +19,8 @@ export const ticketRouter = createTRPCRouter({
         priority: ticket.priority ?? null,
         createdAt: ticket.createdAt,
         updatedAt: ticket.updatedAt,
+        startDate: ticket.startDate,
+        dueDate: ticket.dueDate,
         createdBy: {
           id: createdBy.id,
           name: createdBy.name,
@@ -33,10 +34,16 @@ export const ticketRouter = createTRPCRouter({
       })
       .from(ticket)
       .innerJoin(createdBy, eq(ticket.createdBy, createdBy.id))
-      .leftJoin(assignedTo, eq(ticket.assignedTo, assignedTo.id))
-      .orderBy(desc(ticket.createdAt));
+      .leftJoin(assignedTo, eq(ticket.assignedTo, assignedTo.id)),
+    assignedTo: assignedTo,
+    createdBy: createdBy,
+  };
+};
 
-    return tickets;
+export const ticketRouter = createTRPCRouter({
+  list: baseProcedure.query(async () => {
+    const { query } = ticketWithUser();
+    return query.orderBy(desc(ticket.createdAt));
   }),
 
   get: baseProcedure
@@ -46,39 +53,12 @@ export const ticketRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
-      const assignedTo = alias(user, "assignedTo");
-      const createdBy = alias(user, "createdBy");
+      const { query } = ticketWithUser();
 
-      const tickets = await db
-        .select({
-          id: ticket.id,
-          title: ticket.title,
-          description: ticket.description,
-          status: ticket.status,
-          priority: ticket.priority ?? null,
-          createdAt: ticket.createdAt,
-          updatedAt: ticket.updatedAt,
-          createdBy: {
-            id: createdBy.id,
-            name: createdBy.name,
-            image: createdBy.image,
-          },
-          assignedTo: {
-            id: assignedTo.id,
-            name: assignedTo.name,
-            image: assignedTo.image,
-          },
-        })
-        .from(ticket)
-        .innerJoin(createdBy, eq(ticket.createdBy, createdBy.id))
-        .leftJoin(assignedTo, eq(ticket.assignedTo, assignedTo.id))
-        .where(eq(ticket.id, input.id))
-        .limit(1);
-
+      const tickets = await query.where(eq(ticket.id, input.id)).limit(1);
       if (!tickets.length) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
-
       return tickets[0];
     }),
 
@@ -90,6 +70,8 @@ export const ticketRouter = createTRPCRouter({
         status: z.number(),
         priority: z.number().nullable(),
         assignedTo: z.string().nullable(),
+        startDate: z.date().nullable(),
+        dueDate: z.date().nullable(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -107,6 +89,8 @@ export const ticketRouter = createTRPCRouter({
           priority: input.priority,
           assignedTo: input.assignedTo,
           createdBy: ctx.user.id,
+          startDate: input.startDate,
+          dueDate: input.dueDate,
         })
         .returning();
 
@@ -122,6 +106,8 @@ export const ticketRouter = createTRPCRouter({
         status: z.number(),
         priority: z.number().nullable(),
         assignedTo: z.string().nullable(),
+        startDate: z.date().nullable(),
+        dueDate: z.date().nullable(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -137,6 +123,8 @@ export const ticketRouter = createTRPCRouter({
           status: input.status,
           priority: input.priority,
           assignedTo: input.assignedTo,
+          startDate: input.startDate,
+          dueDate: input.dueDate,
         })
         .where(eq(ticket.id, input.id))
         .returning();

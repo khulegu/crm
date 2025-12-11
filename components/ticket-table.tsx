@@ -36,6 +36,7 @@ import Link from "next/link";
 import * as React from "react";
 import { Checkbox } from "./ui/checkbox";
 import { PriorityBadge, StatusBadge } from "./custom-selects";
+import { Spinner } from "./ui/spinner";
 
 type Ticket = {
   id: string;
@@ -54,6 +55,8 @@ type Ticket = {
     image: string | null;
   } | null;
   updatedAt: Date;
+  startDate: Date | null;
+  dueDate: Date | null;
 };
 
 export const columns: ColumnDef<Ticket>[] = [
@@ -133,6 +136,28 @@ export const columns: ColumnDef<Ticket>[] = [
     enableHiding: false,
   },
   {
+    accessorKey: "startDate",
+    header: "Start Date",
+    cell: ({ row }) => {
+      const startDate = row.getValue("startDate") as Date | null;
+      return (
+        <div className="capitalize">{startDate?.toLocaleDateString()}</div>
+      );
+    },
+    enableSorting: true,
+    enableHiding: false,
+  },
+  {
+    accessorKey: "dueDate",
+    header: "Due Date",
+    cell: ({ row }) => {
+      const dueDate = row.getValue("dueDate") as Date | null;
+      return <div className="capitalize">{dueDate?.toLocaleDateString()}</div>;
+    },
+    enableSorting: true,
+    enableHiding: false,
+  },
+  {
     id: "actions",
     enableHiding: false,
     cell: ({ row }) => {
@@ -191,7 +216,7 @@ export function TicketTable() {
 
   return (
     <div className="w-full">
-      <div className="flex items-center py-4">
+      <div className="flex py-4">
         <Input
           placeholder="Search..."
           value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
@@ -201,9 +226,9 @@ export function TicketTable() {
           className="max-w-sm"
         />
 
-        <Button asChild variant="outline">
+        <Button asChild variant="default" className="ml-auto">
           <Link href="/dashboard/ticket/create">
-            <PlusIcon className="mr-2 h-4 w-4" />
+            <PlusIcon className="h-4 w-4" />
             Create Ticket
           </Link>
         </Button>
@@ -229,7 +254,16 @@ export function TicketTable() {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  Loading...
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}

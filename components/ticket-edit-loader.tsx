@@ -1,6 +1,13 @@
 import { trpc } from "@/trpc/client";
 import TicketForm from "./ticket-form";
 import TicketComments from "./ticket-comments";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+} from "./ui/breadcrumb";
+import { Spinner } from "./ui/spinner";
 
 export default function TicketFormLoader({ id }: { id?: string }) {
   const { data: ticket, isLoading } = trpc.ticket.get.useQuery(
@@ -9,7 +16,12 @@ export default function TicketFormLoader({ id }: { id?: string }) {
   );
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Spinner />
+        Loading...
+      </div>
+    );
   }
 
   if (!ticket && !!id) {
@@ -18,6 +30,15 @@ export default function TicketFormLoader({ id }: { id?: string }) {
 
   return (
     <div className="w-full grid grid-cols-2">
+      <div className="col-span-2">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/dashboard">Tasks</BreadcrumbLink>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
       <div className="col-span-1">
         <TicketForm
           id={id}
@@ -29,6 +50,8 @@ export default function TicketFormLoader({ id }: { id?: string }) {
                   status: ticket.status.toString(),
                   priority: ticket.priority?.toString() || null,
                   assignedTo: ticket.assignedTo?.id || null,
+                  startDate: ticket.startDate || null,
+                  dueDate: ticket.dueDate || null,
                   createdAt: ticket.createdAt,
                   updatedAt: ticket.updatedAt,
                 }
@@ -38,6 +61,8 @@ export default function TicketFormLoader({ id }: { id?: string }) {
                   status: "",
                   priority: null,
                   assignedTo: null,
+                  startDate: null,
+                  dueDate: null,
                   createdAt: null,
                   updatedAt: null,
                 }
@@ -50,13 +75,15 @@ export default function TicketFormLoader({ id }: { id?: string }) {
         </div>
       )}
 
-      <div className="col-span-2">
-        <div className="flex flex-col gap-2 text-sm text-muted-foreground">
-          <div>Created by: {ticket?.createdBy?.name}</div>
-          <div>Created at: {ticket?.createdAt.toLocaleString()}</div>
-          <div>Updated at: {ticket?.updatedAt.toLocaleString()}</div>
+      {ticket && (
+        <div className="col-span-2">
+          <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+            <div>Created by: {ticket.createdBy?.name}</div>
+            <div>Created at: {ticket.createdAt.toLocaleString()}</div>
+            <div>Updated at: {ticket.updatedAt.toLocaleString()}</div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

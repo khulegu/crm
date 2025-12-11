@@ -9,17 +9,17 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { PRIORITY_VALUES, STATUS_VALUES } from "@/lib/schema";
 import { trpc } from "@/trpc/client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
 import { PrioritySelect, StatusSelect, UserSelect } from "./custom-selects";
-import { Textarea } from "./ui/textarea";
+import { DatePicker } from "./date-picker";
 import { GhostInput } from "./ghost-input";
-import { toast } from "sonner";
+import { Textarea } from "./ui/textarea";
 
 const ticketFormSchema = z.object({
   title: z.string().min(1),
@@ -27,6 +27,8 @@ const ticketFormSchema = z.object({
   status: z.enum(STATUS_VALUES.map(String)),
   priority: z.enum(PRIORITY_VALUES.map(String)).nullable(),
   assignedTo: z.string().nullable(),
+  startDate: z.date().nullable(),
+  dueDate: z.date().nullable(),
   createdAt: z.date().nullable(),
   updatedAt: z.date().nullable(),
 });
@@ -56,6 +58,8 @@ export default function TicketForm({
       status: parseInt(data.status),
       priority: data.priority ? parseInt(data.priority) : null,
       assignedTo: data.assignedTo,
+      startDate: data.startDate,
+      dueDate: data.dueDate,
     };
 
     if (id) {
@@ -152,6 +156,32 @@ export default function TicketForm({
                       value={field.value || ""}
                       onValueChange={field.onChange}
                     />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="startDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Start Date</FormLabel>
+                  <FormControl>
+                    <DatePicker value={field.value} onChange={field.onChange} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="dueDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Due Date</FormLabel>
+                  <FormControl>
+                    <DatePicker value={field.value} onChange={field.onChange} />
                   </FormControl>
                 </FormItem>
               )}

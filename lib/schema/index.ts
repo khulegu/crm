@@ -7,14 +7,14 @@ export const STATUS = {
   OPEN: 0,
   IN_PROGRESS: 1,
   CLOSED: 2,
-}
+};
 
 export const PRIORITY = {
   LOW: 0,
   MEDIUM: 1,
   HIGH: 2,
   URGENT: 3,
-}
+};
 
 export const STATUS_VALUES = Object.values(STATUS);
 export const PRIORITY_VALUES = Object.values(PRIORITY);
@@ -24,13 +24,13 @@ export const PRIORITY_LABEL = {
   [PRIORITY.MEDIUM]: "Medium",
   [PRIORITY.HIGH]: "High",
   [PRIORITY.URGENT]: "Urgent",
-}
+};
 
 export const STATUS_LABEL = {
   [STATUS.OPEN]: "Open",
   [STATUS.IN_PROGRESS]: "In Progress",
   [STATUS.CLOSED]: "Closed",
-}
+};
 
 export const ticket = pgTable("ticket", {
   id: text("id").primaryKey(),
@@ -41,15 +41,20 @@ export const ticket = pgTable("ticket", {
   status: integer("status").notNull().default(STATUS.OPEN),
   priority: integer("priority").default(PRIORITY.LOW),
 
-  createdBy: text("created_by").notNull().references(() => user.id),
+  createdBy: text("created_by")
+    .notNull()
+    .references(() => user.id),
   assignedTo: text("assigned_to").references(() => user.id),
+
+  startDate: timestamp("start_date"),
+  dueDate: timestamp("due_date"),
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
-})
+});
 
 export const tag = pgTable("tag", {
   id: text("id").primaryKey(),
@@ -59,7 +64,7 @@ export const tag = pgTable("tag", {
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
-})
+});
 
 export const ticketTag = pgTable("ticket_tag", {
   ticketId: text("ticket_id").references(() => ticket.id),
@@ -69,4 +74,4 @@ export const ticketTag = pgTable("ticket_tag", {
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
-})
+});
