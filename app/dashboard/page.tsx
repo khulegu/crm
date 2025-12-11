@@ -1,5 +1,6 @@
 "use client";
 
+import { Logo } from "@/components/logo";
 import { TicketTable } from "@/components/ticket-table";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
@@ -13,12 +14,10 @@ export default function DashboardPage() {
   useEffect(() => {
     const checkSession = async () => {
       const session = await authClient.getSession();
-
       if (!session.data) {
         router.push("/login");
         return;
       }
-
       setUser(session.data.user);
       setLoading(false);
     };
@@ -45,9 +44,7 @@ export default function DashboardPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center">
-              <h1 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
-                CRM Dashboard
-              </h1>
+              <Logo />
             </div>
             <div className="flex items-center gap-4">
               <div className="text-sm text-zinc-600 dark:text-zinc-400">

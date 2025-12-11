@@ -1,20 +1,24 @@
 import { auth } from '@/lib/auth';
-import { db } from '@/lib/db';
 import { initTRPC } from '@trpc/server';
-import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
 import { cache } from 'react';
 import superjson from 'superjson';
 
-export const createTRPCContext = cache(async (opts: CreateNextContextOptions) => {
-  const session = auth.api.getSession({
+export const createTRPCContext = cache(async (opts: FetchCreateContextFnOptions) => {
+  const session = await auth.api.getSession({
     headers: opts.req.headers as HeadersInit,
   })
 
   return {
-    db,
-    session,
+    user: session?.user,
   };
 });
+
+export const createServerContext = async () => {
+  const session = await auth.api.getSession();
+  return { user: session?.user };
+};
+
 
 export type TRPCContext = Awaited<ReturnType<typeof createTRPCContext>>;
 
