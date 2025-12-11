@@ -38,6 +38,8 @@ import { Checkbox } from "./ui/checkbox";
 import { PriorityBadge, StatusBadge } from "./custom-selects";
 import { Spinner } from "./ui/spinner";
 import { Badge } from "./ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 
 type Ticket = {
   id: string;
@@ -133,7 +135,17 @@ export const columns: ColumnDef<Ticket>[] = [
     header: "Created By",
     cell: ({ row }) => {
       const createdBy = row.getValue("createdBy") as Ticket["createdBy"];
-      return <div className="capitalize">{createdBy?.name ?? "Unknown"}</div>;
+      return (
+        <HoverCard>
+          <HoverCardTrigger>
+            <Avatar>
+              <AvatarImage src={createdBy?.image ?? undefined} />
+              <AvatarFallback>{createdBy?.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+          </HoverCardTrigger>
+          <HoverCardContent>{createdBy?.name}</HoverCardContent>
+        </HoverCard>
+      );
     },
     enableSorting: false,
     enableHiding: false,
@@ -143,7 +155,17 @@ export const columns: ColumnDef<Ticket>[] = [
     header: "Assigned To",
     cell: ({ row }) => {
       const assignedTo = row.getValue("assignedTo") as Ticket["assignedTo"];
-      return <div className="capitalize">{assignedTo?.name}</div>;
+      return (
+        <HoverCard>
+          <HoverCardTrigger>
+            <Avatar>
+              <AvatarImage src={assignedTo?.image ?? undefined} />
+              <AvatarFallback>{assignedTo?.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+          </HoverCardTrigger>
+          <HoverCardContent>{assignedTo?.name}</HoverCardContent>
+        </HoverCard>
+      );
     },
     enableSorting: false,
     enableHiding: false,

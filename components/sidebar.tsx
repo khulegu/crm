@@ -62,6 +62,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
+                <Link href="/dashboard/inbox">
+                  <Bell className="size-4" />
+                  Inbox
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
                 <Link href="/dashboard">
                   <CheckCheck className="size-4" />
                   Tasks
@@ -71,18 +80,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="/dashboard/users">
+                <Link href="/dashboard/members">
                   <UsersIcon className="size-4" />
-                  Users
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/dashboard/notifications">
-                  <Bell className="size-4" />
-                  Notifications
+                  Members
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
