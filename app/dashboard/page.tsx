@@ -1,12 +1,25 @@
 "use client";
 
+import { TicketKanban } from "@/components/ticket-kanban";
 import { TicketTable } from "@/components/ticket-table";
+import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
 
 export default function DashboardPage() {
   return (
     <>
-      <h1 className="text-2xl font-bold">Tasks</h1>
-      <TicketTable />
+      <Tabs defaultValue="table">
+        <h1 className="text-2xl font-bold">Tasks</h1>
+        <TabsList>
+          <TabsTrigger value="table">Table</TabsTrigger>
+          <TabsTrigger value="kanban">Kanban</TabsTrigger>
+        </TabsList>
+        <TabsContent value="kanban">
+          <TicketKanban />
+        </TabsContent>
+        <TabsContent value="table">
+          <TicketTable />
+        </TabsContent>
+      </Tabs>
     </>
   );
 }

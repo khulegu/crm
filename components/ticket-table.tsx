@@ -261,7 +261,7 @@ export function TicketTable() {
 
   return (
     <div className="w-full">
-      <div className="flex py-4">
+      <div className="flex pb-4">
         <Input
           placeholder="Search..."
           value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
