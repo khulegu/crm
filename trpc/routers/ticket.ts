@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { notification, tag, ticket, ticketTag, user } from "@/lib/schema";
 import { TRPCError } from "@trpc/server";
-import { asc, desc, eq, inArray } from "drizzle-orm";
+import { asc, count, desc, eq, inArray } from "drizzle-orm";
 import { alias, PgColumn } from "drizzle-orm/pg-core";
 import z from "zod";
 import { baseProcedure, createTRPCRouter } from "../init";
@@ -52,6 +52,8 @@ export const ticketRouter = createTRPCRouter({
     .input(
       z.object({
         sorting: sortingSchema.nullable(),
+        pageIndex: z.number().nullable(),
+        pageSize: z.number().nullable(),
       })
     )
     .query(async ({ input }) => {
@@ -78,7 +80,14 @@ export const ticketRouter = createTRPCRouter({
               : asc(sortableColumns[sort.id]);
           }) ?? [];
 
-      const tickets = await query.orderBy(...sorting);
+      const tickets = await query
+        .orderBy(...sorting)
+        .limit(input.pageSize ?? 10)
+        .offset((input.pageIndex ?? 0) * (input.pageSize ?? 10));
+
+      const [{ count: totalCount }] = await db
+        .select({ count: count() })
+        .from(ticket);
 
       const ticketTags = await db
         .select({
@@ -95,15 +104,20 @@ export const ticketRouter = createTRPCRouter({
           )
         );
 
-      return tickets.map((ticket) => ({
-        ...ticket,
-        tags: ticketTags
-          .filter((tag) => ticket.id === tag.ticketId)
-          .map((tag) => ({
-            id: tag.id,
-            name: tag.name,
-          })),
-      }));
+      return {
+        tickets: tickets.map((ticket) => ({
+          ...ticket,
+          tags: ticketTags
+            .filter((tag) => ticket.id === tag.ticketId)
+            .map((tag) => ({
+              id: tag.id,
+              name: tag.name,
+            })),
+        })),
+        totalCount,
+        pageIndex: input.pageIndex ?? 0,
+        pageSize: input.pageSize ?? 10,
+      };
     }),
 
   get: baseProcedure

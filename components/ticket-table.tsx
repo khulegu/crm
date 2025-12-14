@@ -47,6 +47,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { Checkbox } from "./ui/checkbox";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
+import { useState } from "react";
 
 type Ticket = {
   id: string;
@@ -241,9 +242,16 @@ export const columns: ColumnDef<Ticket>[] = [
 
 export function TickedTableDataLoader() {
   const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [pagination, setPagination] = useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
+
   const { data, isFetching } = trpc.ticket.list.useQuery(
     {
       sorting,
+      pageIndex: pagination.pageIndex,
+      pageSize: pagination.pageSize,
     },
     {
       /** keeps the previous state when new one is loading */
@@ -261,9 +269,12 @@ export function TickedTableDataLoader() {
 
   return (
     <TicketTable
-      tickets={data!}
+      tickets={data.tickets}
+      totalCount={data.totalCount}
       sorting={sorting}
       setSorting={setSorting}
+      pagination={pagination}
+      setPagination={setPagination}
       isFetching={isFetching}
     />
   );
@@ -271,39 +282,44 @@ export function TickedTableDataLoader() {
 
 export function TicketTable({
   tickets,
+  totalCount,
   sorting,
   setSorting,
+  pagination,
+  setPagination,
   isFetching,
 }: {
   tickets: Ticket[];
+  totalCount: number;
   sorting: SortingState;
   setSorting: OnChangeFn<SortingState>;
+  pagination: {
+    pageIndex: number;
+    pageSize: number;
+  };
+  setPagination: OnChangeFn<{
+    pageIndex: number;
+    pageSize: number;
+  }>;
   isFetching: boolean;
 }) {
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    []
-  );
-  const [columnVisibility, setColumnVisibility] =
-    React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
 
   const table = useReactTable({
     data: tickets ?? [],
     columns,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
+    onPaginationChange: setPagination,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     state: {
       sorting,
-      columnFilters,
-      columnVisibility,
+      pagination,
       rowSelection,
     },
+    manualPagination: true,
     manualSorting: true,
+    rowCount: totalCount,
   });
 
   return (
