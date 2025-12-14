@@ -1,5 +1,6 @@
 import {
   boolean,
+  index,
   integer,
   pgTable,
   text,
@@ -38,29 +39,43 @@ export const STATUS_LABEL = {
   [STATUS.CLOSED]: "Closed",
 };
 
-export const ticket = pgTable("ticket", {
-  id: text("id").primaryKey(),
+export const ticket = pgTable(
+  "ticket",
+  {
+    id: text("id").primaryKey(),
 
-  title: text("title").notNull(),
-  description: text("description").notNull().default(""),
+    title: text("title").notNull(),
+    description: text("description").notNull().default(""),
 
-  status: integer("status").notNull().default(STATUS.OPEN),
-  priority: integer("priority").default(PRIORITY.LOW),
+    status: integer("status").notNull().default(STATUS.OPEN),
+    priority: integer("priority").default(PRIORITY.LOW),
 
-  createdBy: text("created_by")
-    .notNull()
-    .references(() => user.id),
-  assignedTo: text("assigned_to").references(() => user.id),
+    createdBy: text("created_by")
+      .notNull()
+      .references(() => user.id),
+    assignedTo: text("assigned_to").references(() => user.id),
 
-  startDate: timestamp("start_date"),
-  dueDate: timestamp("due_date"),
+    startDate: timestamp("start_date"),
+    dueDate: timestamp("due_date"),
 
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => /* @__PURE__ */ new Date())
-    .notNull(),
-});
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .notNull(),
+  },
+  (table) => [
+    index("idx_status").on(table.status),
+    index("idx_priority").on(table.priority),
+    index("idx_created_by").on(table.createdBy),
+    index("idx_assigned_to").on(table.assignedTo),
+    index("idx_start_date").on(table.startDate),
+    index("idx_due_date").on(table.dueDate),
+    index("idx_created_at").on(table.createdAt),
+    index("idx_updated_at").on(table.updatedAt),
+    index("idx_title").on(table.title),
+  ]
+);
 
 export const tag = pgTable("tag", {
   id: text("id").primaryKey(),

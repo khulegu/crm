@@ -246,12 +246,15 @@ export const ticketRouter = createTRPCRouter({
 
       if (input.tags) {
         await db.delete(ticketTag).where(eq(ticketTag.ticketId, input.id));
-        await db.insert(ticketTag).values(
-          input.tags.map((tag) => ({
-            ticketId: input.id,
-            tagId: tag,
-          }))
-        );
+
+        if (input.tags.length) {
+          await db.insert(ticketTag).values(
+            input.tags.map((tag) => ({
+              ticketId: input.id,
+              tagId: tag,
+            }))
+          );
+        }
       }
 
       if (oldAssignedTo.id !== input.assignedTo) {
