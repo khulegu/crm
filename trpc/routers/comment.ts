@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { comment, user } from "@/lib/schema";
+import { comment, commentMention, user } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import z from "zod";
 import { baseProcedure, createTRPCRouter } from "../init";
@@ -26,16 +26,38 @@ export const commentRouter = createTRPCRouter({
     }),
 
   create: baseProcedure
-    .input(z.object({ ticketId: z.string(), body: z.string() }))
+    .input(
+      z.object({
+        ticketId: z.string(),
+        body: z.string(),
+        mentionedUserIds: z.array(z.string()).optional().default([]),
+      })
+    )
     .mutation(async ({ input, ctx }) => {
       if (!ctx.user?.id) {
         throw new TRPCError({ code: "UNAUTHORIZED" });
       }
-      return db.insert(comment).values({
-        id: crypto.randomUUID(),
+
+      const commentId = crypto.randomUUID();
+
+      // Insert the comment
+      await db.insert(comment).values({
+        id: commentId,
         body: input.body,
         ticketId: input.ticketId,
         createdBy: ctx.user.id,
       });
+
+      // Insert mentions if any
+      if (input.mentionedUserIds.length > 0) {
+        await db.insert(commentMention).values(
+          input.mentionedUserIds.map((userId) => ({
+            commentId,
+            userId,
+          }))
+        );
+      }
+
+      return { id: commentId };
     }),
 });
