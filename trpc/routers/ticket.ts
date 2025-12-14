@@ -1,15 +1,24 @@
 import { db } from "@/lib/db";
 import { notification, tag, ticket, ticketTag, user } from "@/lib/schema";
 import { TRPCError } from "@trpc/server";
-import { desc, eq, inArray } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
+import { asc, desc, eq, inArray } from "drizzle-orm";
+import { alias, PgColumn } from "drizzle-orm/pg-core";
 import z from "zod";
 import { baseProcedure, createTRPCRouter } from "../init";
+
+const sortingSchema = z.array(
+  z.object({
+    id: z.string(),
+    desc: z.boolean(),
+  })
+);
 
 const ticketWithUser = () => {
   const assignedTo = alias(user, "assignedTo");
   const createdBy = alias(user, "createdBy");
   return {
+    assignedTo,
+    createdBy,
     query: db
       .select({
         id: ticket.id,
@@ -35,41 +44,67 @@ const ticketWithUser = () => {
       .from(ticket)
       .innerJoin(createdBy, eq(ticket.createdBy, createdBy.id))
       .leftJoin(assignedTo, eq(ticket.assignedTo, assignedTo.id)),
-    assignedTo: assignedTo,
-    createdBy: createdBy,
   };
 };
 
 export const ticketRouter = createTRPCRouter({
-  list: baseProcedure.query(async () => {
-    const { query } = ticketWithUser();
-    const tickets = await query.orderBy(desc(ticket.createdAt));
-
-    const ticketTags = await db
-      .select({
-        ticketId: ticketTag.ticketId,
-        id: tag.id,
-        name: tag.name,
+  list: baseProcedure
+    .input(
+      z.object({
+        sorting: sortingSchema.nullable(),
       })
-      .from(ticketTag)
-      .innerJoin(tag, eq(ticketTag.tagId, tag.id))
-      .where(
-        inArray(
-          ticketTag.ticketId,
-          tickets.map((ticket) => ticket.id)
-        )
-      );
+    )
+    .query(async ({ input }) => {
+      const { query } = ticketWithUser();
 
-    return tickets.map((ticket) => ({
-      ...ticket,
-      tags: ticketTags
-        .filter((tag) => ticket.id === tag.ticketId)
-        .map((tag) => ({
+      const sortableColumns = {
+        title: ticket.title,
+        createdAt: ticket.createdAt,
+        updatedAt: ticket.updatedAt,
+        startDate: ticket.startDate,
+        dueDate: ticket.dueDate,
+        status: ticket.status,
+        priority: ticket.priority,
+        assignedTo: ticket.assignedTo,
+        createdBy: ticket.createdBy,
+      } as Record<string, PgColumn>;
+
+      const sorting =
+        input.sorting
+          ?.filter((sort) => sort.id in sortableColumns)
+          ?.map((sort) => {
+            return sort.desc
+              ? desc(sortableColumns[sort.id])
+              : asc(sortableColumns[sort.id]);
+          }) ?? [];
+
+      const tickets = await query.orderBy(...sorting);
+
+      const ticketTags = await db
+        .select({
+          ticketId: ticketTag.ticketId,
           id: tag.id,
           name: tag.name,
-        })),
-    }));
-  }),
+        })
+        .from(ticketTag)
+        .innerJoin(tag, eq(ticketTag.tagId, tag.id))
+        .where(
+          inArray(
+            ticketTag.ticketId,
+            tickets.map((ticket) => ticket.id)
+          )
+        );
+
+      return tickets.map((ticket) => ({
+        ...ticket,
+        tags: ticketTags
+          .filter((tag) => ticket.id === tag.ticketId)
+          .map((tag) => ({
+            id: tag.id,
+            name: tag.name,
+          })),
+      }));
+    }),
 
   get: baseProcedure
     .input(

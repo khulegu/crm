@@ -1,4 +1,5 @@
 "use client";
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { PRIORITY_LABEL, STATUS_LABEL } from "@/lib/schema";
+import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 import {
   ColumnDef,
@@ -26,19 +28,24 @@ import {
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
-  getSortedRowModel,
+  OnChangeFn,
   SortingState,
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table";
-import { MoreHorizontal, PlusIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  Loader2,
+  MoreHorizontal,
+  PlusIcon,
+} from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
-import { Checkbox } from "./ui/checkbox";
 import { PriorityBadge, StatusBadge } from "./custom-selects";
-import { Spinner } from "./ui/spinner";
-import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Badge } from "./ui/badge";
+import { Checkbox } from "./ui/checkbox";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 
 type Ticket = {
@@ -93,7 +100,7 @@ export const columns: ColumnDef<Ticket>[] = [
         {row.getValue("title")}
       </Link>
     ),
-    enableSorting: false,
+    enableSorting: true,
     enableHiding: false,
   },
   {
@@ -103,6 +110,7 @@ export const columns: ColumnDef<Ticket>[] = [
       const status = row.getValue("status") as keyof typeof STATUS_LABEL;
       return <StatusBadge status={status} />;
     },
+    enableSorting: true,
   },
   {
     accessorKey: "priority",
@@ -111,6 +119,7 @@ export const columns: ColumnDef<Ticket>[] = [
       const priority = row.getValue("priority") as keyof typeof PRIORITY_LABEL;
       return <PriorityBadge priority={priority} />;
     },
+    enableSorting: true,
   },
   {
     accessorKey: "tags",
@@ -147,7 +156,7 @@ export const columns: ColumnDef<Ticket>[] = [
         </HoverCard>
       );
     },
-    enableSorting: false,
+    enableSorting: true,
     enableHiding: false,
   },
   {
@@ -167,7 +176,7 @@ export const columns: ColumnDef<Ticket>[] = [
         </HoverCard>
       );
     },
-    enableSorting: false,
+    enableSorting: true,
     enableHiding: false,
   },
   {
@@ -230,9 +239,47 @@ export const columns: ColumnDef<Ticket>[] = [
   },
 ];
 
-export function TicketTable() {
-  const { data: tickets, isLoading } = trpc.ticket.list.useQuery();
+export function TickedTableDataLoader() {
   const [sorting, setSorting] = React.useState<SortingState>([]);
+  const { data, isFetching } = trpc.ticket.list.useQuery(
+    {
+      sorting,
+    },
+    {
+      /** keeps the previous state when new one is loading */
+      placeholderData: (previousData) => previousData,
+    }
+  );
+
+  if (!data) {
+    return (
+      <div>
+        Loading... <Loader2 className="animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <TicketTable
+      tickets={data!}
+      sorting={sorting}
+      setSorting={setSorting}
+      isFetching={isFetching}
+    />
+  );
+}
+
+export function TicketTable({
+  tickets,
+  sorting,
+  setSorting,
+  isFetching,
+}: {
+  tickets: Ticket[];
+  sorting: SortingState;
+  setSorting: OnChangeFn<SortingState>;
+  isFetching: boolean;
+}) {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
   );
@@ -247,7 +294,6 @@ export function TicketTable() {
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
@@ -257,6 +303,7 @@ export function TicketTable() {
       columnVisibility,
       rowSelection,
     },
+    manualSorting: true,
   });
 
   return (
@@ -282,16 +329,50 @@ export function TicketTable() {
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="hover:bg-transparent">
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
+                    <TableHead
+                      key={header.id}
+                      style={{ width: `${header.getSize()}px` }}
+                      className="h-11"
+                    >
+                      {header.column.getCanSort() ? (
+                        <div
+                          className={cn(
+                            header.column.getCanSort() &&
+                              "flex h-full cursor-pointer items-center justify-between gap-2 select-none"
+                          )}
+                          onClick={header.column.getToggleSortingHandler()}
+                          tabIndex={header.column.getCanSort() ? 0 : undefined}
+                        >
+                          {flexRender(
                             header.column.columnDef.header,
                             header.getContext()
                           )}
+                          {{
+                            asc: (
+                              <ChevronUpIcon
+                                className="shrink-0 opacity-60"
+                                size={16}
+                                aria-hidden="true"
+                              />
+                            ),
+                            desc: (
+                              <ChevronDownIcon
+                                className="shrink-0 opacity-60"
+                                size={16}
+                                aria-hidden="true"
+                              />
+                            ),
+                          }[header.column.getIsSorted() as string] ?? null}
+                        </div>
+                      ) : (
+                        flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )
+                      )}
                     </TableHead>
                   );
                 })}
@@ -299,16 +380,7 @@ export function TicketTable() {
             ))}
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  Loading...
-                </TableCell>
-              </TableRow>
-            ) : table.getRowModel().rows?.length ? (
+            {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
@@ -333,6 +405,21 @@ export function TicketTable() {
                   No results.
                 </TableCell>
               </TableRow>
+            )}
+
+            {isFetching ? (
+              <TableRow>
+                <TableCell
+                  colSpan={table.getVisibleLeafColumns().length}
+                  className="h-8 text-center bg-accent  items-center justify-center"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="animate-spin" size={16} /> Sorting...
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              <></>
             )}
           </TableBody>
         </Table>

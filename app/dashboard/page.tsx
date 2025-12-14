@@ -1,8 +1,8 @@
 "use client";
 
 import { TicketKanban } from "@/components/ticket-kanban";
-import { TicketTable } from "@/components/ticket-table";
-import { Tabs, TabsContent, TabsTrigger, TabsList } from "@/components/ui/tabs";
+import { TickedTableDataLoader } from "@/components/ticket-table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function DashboardPage() {
   return (
@@ -17,7 +17,7 @@ export default function DashboardPage() {
           <TicketKanban />
         </TabsContent>
         <TabsContent value="table">
-          <TicketTable />
+          <TickedTableDataLoader />
         </TabsContent>
       </Tabs>
     </>
