@@ -61,10 +61,13 @@ export function MentionInput({
 
       // Build a map of current mentions in raw format
       const rawMentions: { userId: string; name: string }[] = [];
-      let match;
+
+      let match: RegExpExecArray | null = null;
+
       const regex = new RegExp(MENTION_TAG_REGEX);
+
       while ((match = regex.exec(currentRaw)) !== null) {
-        const user = users.find((u) => u.id === match[1]);
+        const user = users.find((u) => u.id === match?.[1]);
         if (user) {
           rawMentions.push({ userId: user.id, name: user.name });
         }
