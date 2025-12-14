@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { notification, tag, ticket, ticketTag, user } from "@/lib/schema";
 import { TRPCError } from "@trpc/server";
-import { asc, count, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, SQL } from "drizzle-orm";
 import { alias, PgColumn } from "drizzle-orm/pg-core";
 import z from "zod";
 import { baseProcedure, createTRPCRouter } from "../init";
@@ -54,6 +54,8 @@ export const ticketRouter = createTRPCRouter({
         sorting: sortingSchema.nullable(),
         pageIndex: z.number().nullable(),
         pageSize: z.number().nullable(),
+        status: z.number().nullable().optional(),
+        priority: z.number().nullable().optional(),
       })
     )
     .query(async ({ input }) => {
@@ -80,14 +82,28 @@ export const ticketRouter = createTRPCRouter({
               : asc(sortableColumns[sort.id]);
           }) ?? [];
 
+      // Build filter conditions
+      const conditions: SQL[] = [];
+      if (input.status !== null && input.status !== undefined) {
+        conditions.push(eq(ticket.status, input.status));
+      }
+      if (input.priority !== null && input.priority !== undefined) {
+        conditions.push(eq(ticket.priority, input.priority));
+      }
+
+      const whereClause =
+        conditions.length > 0 ? and(...conditions) : undefined;
+
       const tickets = await query
+        .where(whereClause)
         .orderBy(...sorting)
         .limit(input.pageSize ?? 10)
         .offset((input.pageIndex ?? 0) * (input.pageSize ?? 10));
 
       const [{ count: totalCount }] = await db
         .select({ count: count() })
-        .from(ticket);
+        .from(ticket)
+        .where(whereClause);
 
       const ticketTags = await db
         .select({

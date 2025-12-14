@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PRIORITY_LABEL, STATUS_LABEL } from "@/lib/schema";
+import { PRIORITY, PRIORITY_LABEL, STATUS, STATUS_LABEL } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/trpc/client";
 import {
@@ -47,6 +47,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { Checkbox } from "./ui/checkbox";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 import { useState } from "react";
 
 type Ticket = {
@@ -246,12 +253,16 @@ export function TickedTableDataLoader() {
     pageIndex: 0,
     pageSize: 10,
   });
+  const [statusFilter, setStatusFilter] = useState<number | null>(null);
+  const [priorityFilter, setPriorityFilter] = useState<number | null>(null);
 
   const { data, isFetching } = trpc.ticket.list.useQuery(
     {
       sorting,
       pageIndex: pagination.pageIndex,
       pageSize: pagination.pageSize,
+      status: statusFilter,
+      priority: priorityFilter,
     },
     {
       /** keeps the previous state when new one is loading */
@@ -277,6 +288,10 @@ export function TickedTableDataLoader() {
       pagination={pagination}
       setPagination={setPagination}
       isFetching={isFetching}
+      statusFilter={statusFilter}
+      setStatusFilter={setStatusFilter}
+      priorityFilter={priorityFilter}
+      setPriorityFilter={setPriorityFilter}
     />
   );
 }
@@ -289,6 +304,10 @@ export function TicketTable({
   pagination,
   setPagination,
   isFetching,
+  statusFilter,
+  setStatusFilter,
+  priorityFilter,
+  setPriorityFilter,
 }: {
   tickets: Ticket[];
   totalCount: number;
@@ -303,6 +322,10 @@ export function TicketTable({
     pageSize: number;
   }>;
   isFetching: boolean;
+  statusFilter: number | null;
+  setStatusFilter: (value: number | null) => void;
+  priorityFilter: number | null;
+  setPriorityFilter: (value: number | null) => void;
 }) {
   const [rowSelection, setRowSelection] = React.useState({});
 
@@ -325,7 +348,7 @@ export function TicketTable({
 
   return (
     <div className="w-full">
-      <div className="flex pb-4">
+      <div className="flex flex-wrap items-center gap-2 pb-4">
         <Input
           placeholder="Search..."
           value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
@@ -334,6 +357,55 @@ export function TicketTable({
           }
           className="max-w-sm"
         />
+
+        <Select
+          value={statusFilter?.toString() ?? "all"}
+          onValueChange={(value) =>
+            setStatusFilter(value === "all" ? null : parseInt(value))
+          }
+        >
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value={STATUS.OPEN.toString()}>
+              {STATUS_LABEL[STATUS.OPEN]}
+            </SelectItem>
+            <SelectItem value={STATUS.IN_PROGRESS.toString()}>
+              {STATUS_LABEL[STATUS.IN_PROGRESS]}
+            </SelectItem>
+            <SelectItem value={STATUS.CLOSED.toString()}>
+              {STATUS_LABEL[STATUS.CLOSED]}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={priorityFilter?.toString() ?? "all"}
+          onValueChange={(value) =>
+            setPriorityFilter(value === "all" ? null : parseInt(value))
+          }
+        >
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Priority" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Priorities</SelectItem>
+            <SelectItem value={PRIORITY.LOW.toString()}>
+              {PRIORITY_LABEL[PRIORITY.LOW]}
+            </SelectItem>
+            <SelectItem value={PRIORITY.MEDIUM.toString()}>
+              {PRIORITY_LABEL[PRIORITY.MEDIUM]}
+            </SelectItem>
+            <SelectItem value={PRIORITY.HIGH.toString()}>
+              {PRIORITY_LABEL[PRIORITY.HIGH]}
+            </SelectItem>
+            <SelectItem value={PRIORITY.URGENT.toString()}>
+              {PRIORITY_LABEL[PRIORITY.URGENT]}
+            </SelectItem>
+          </SelectContent>
+        </Select>
 
         <Button asChild variant="default" className="ml-auto">
           <Link href="/dashboard/ticket/create">
