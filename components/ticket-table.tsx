@@ -261,8 +261,9 @@ export function TickedTableDataLoader() {
 
   if (!data) {
     return (
-      <div>
-        Loading... <Loader2 className="animate-spin" />
+      <div className="flex h-96 w-full flex-col items-center justify-center gap-3">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">Loading tickets...</p>
       </div>
     );
   }
@@ -341,7 +342,15 @@ export function TicketTable({
           </Link>
         </Button>
       </div>
-      <div className="overflow-hidden rounded-md border">
+      <div className="relative overflow-hidden rounded-md border">
+        {isFetching && (
+          <div className="absolute inset-0 top-[44px] z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="animate-spin" size={20} />
+              <span>Loading...</span>
+            </div>
+          </div>
+        )}
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -421,21 +430,6 @@ export function TicketTable({
                   No results.
                 </TableCell>
               </TableRow>
-            )}
-
-            {isFetching ? (
-              <TableRow>
-                <TableCell
-                  colSpan={table.getVisibleLeafColumns().length}
-                  className="h-8 text-center bg-accent  items-center justify-center"
-                >
-                  <div className="flex items-center justify-center gap-2">
-                    <Loader2 className="animate-spin" size={16} /> Sorting...
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : (
-              <></>
             )}
           </TableBody>
         </Table>
