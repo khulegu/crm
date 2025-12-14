@@ -271,4 +271,29 @@ export const ticketRouter = createTRPCRouter({
 
       return updatedTicket;
     }),
+
+  updateStatus: baseProcedure
+    .input(
+      z.array(
+        z.object({
+          id: z.string(),
+          status: z.number(),
+        })
+      )
+    )
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user?.id) {
+        throw new TRPCError({ code: "UNAUTHORIZED" });
+      }
+
+      console.log(input);
+
+      for (const item of input) {
+        await db
+          .update(ticket)
+          .set({ status: item.status })
+          .where(eq(ticket.id, item.id));
+      }
+      return input;
+    }),
 });

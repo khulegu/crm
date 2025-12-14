@@ -8,11 +8,13 @@ export default function DashboardPage() {
   return (
     <>
       <Tabs defaultValue="table">
-        <h1 className="text-2xl font-bold">Tasks</h1>
-        <TabsList>
-          <TabsTrigger value="table">Table</TabsTrigger>
-          <TabsTrigger value="kanban">Kanban</TabsTrigger>
-        </TabsList>
+        <div className="flex gap-2">
+          <h1 className="text-2xl font-bold">Tasks</h1>
+          <TabsList>
+            <TabsTrigger value="table">Table</TabsTrigger>
+            <TabsTrigger value="kanban">Kanban</TabsTrigger>
+          </TabsList>
+        </div>
         <TabsContent value="kanban">
           <TicketKanban />
         </TabsContent>

@@ -10,6 +10,7 @@ import {
   KanbanProvider,
 } from "./kibo-ui/kanban";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { toast } from "sonner";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", {
   month: "short",
@@ -27,14 +28,62 @@ const STATUS_COLOR = {
   [STATUS.CLOSED]: "#10B981",
 };
 
+const queryKey = {
+  pageIndex: 0,
+  pageSize: 100,
+  sorting: [],
+};
+
 export function TicketKanban() {
-  const { data: tickets } = trpc.ticket.list.useQuery();
+  const utils = trpc.useUtils();
+
+  const { data: { tickets } = { tickets: [] } } =
+    trpc.ticket.list.useQuery(queryKey);
+
+  const { mutate: updateTicketStatus } = trpc.ticket.updateStatus.useMutation({
+    onMutate: async (newData) => {
+      // Cancel any outgoing refetches to prevent overwriting optimistic update
+      await utils.ticket.list.cancel();
+
+      // Snapshot the previous value
+      const previousData = utils.ticket.list.getData(queryKey);
+
+      // Optimistically update the cache
+      utils.ticket.list.setData(queryKey, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          tickets: old.tickets.map((ticket) => {
+            const update = newData.find((u) => u.id === ticket.id);
+            if (update) {
+              return { ...ticket, status: update.status };
+            }
+            return ticket;
+          }),
+        };
+      });
+
+      // Return context with previous data for rollback
+      return { previousData };
+    },
+    onError: (_err, _newData, context) => {
+      // Rollback to previous data on error
+      if (context?.previousData) {
+        utils.ticket.list.setData(queryKey, context.previousData);
+      }
+      toast.error("Failed to update ticket status");
+    },
+    onSettled: () => {
+      // Refetch to ensure server state is synced
+      utils.ticket.list.invalidate();
+    },
+  });
 
   return (
     <div>
       {tickets && (
         <KanbanProvider
-          columns={Object.entries(STATUS).map(([key, value]) => ({
+          columns={Object.entries(STATUS).map(([, value]) => ({
             id: value.toString(),
             name: STATUS_LABEL[value],
             color: STATUS_COLOR[value],
@@ -45,7 +94,14 @@ export function TicketKanban() {
             column: ticket.status.toString(),
             ticket,
           }))}
-          onDataChange={() => {}}
+          onDataChange={(data) => {
+            updateTicketStatus(
+              data.map(({ id, column }: { id: string; column: string }) => ({
+                id,
+                status: parseInt(column),
+              })) as { id: string; status: number }[]
+            );
+          }}
         >
           {(column) => (
             <KanbanBoard
